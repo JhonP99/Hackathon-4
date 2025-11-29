@@ -1,113 +1,105 @@
+// server.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-
-// Importamos ambas librerías
-const mysql = require('mysql2/promise'); // Usamos la versión con Promesas (más moderna)
 const { Pool } = require('pg');
 
 const app = express();
-app.use(cors());
 
-// LEER CONFIGURACIÓN DEL .ENV
-const DB_TYPE = process.env.DB_TYPE || 'mysql'; // Por defecto MySQL
+// Configuración
+const PORT = process.env.PORT || 3000;
+const PG_CONNECTION_STRING = process.env.PG_CONNECTION_STRING;
+const PG_SCHEMA = process.env.PG_SCHEMA || 'hackathon_solar';
 
 let pgPool = null;
-let mysqlPool = null;
 
-// --- 1. CONEXIÓN INTELIGENTE ---
-async function iniciarBaseDeDatos() {
-    if (DB_TYPE === 'postgres') {
-        console.log("☁️  MODO NUBE: Conectando a PostgreSQL...");
-        pgPool = new Pool({
-            connectionString: process.env.PG_CONNECTION_STRING,
-            ssl: { rejectUnauthorized: false } // Necesario para Render/Neon/Supabase
-        });
-    } else {
-        console.log("💻 MODO LOCAL: Conectando a MySQL...");
-        mysqlPool = mysql.createPool({
-            host: process.env.MYSQL_HOST || 'localhost',
-            user: process.env.MYSQL_USER || 'solar_user',
-            password: process.env.MYSQL_PASS || '12345',
-            database: process.env.MYSQL_NAME || 'hackathon_solar'
-        });
+// ---------- 1. Inicialización de base de datos ----------
+async function initDatabase() {
+    if (!PG_CONNECTION_STRING) {
+        throw new Error('Falta la variable de entorno PG_CONNECTION_STRING');
     }
+
+    pgPool = new Pool({
+        connectionString: PG_CONNECTION_STRING,
+        ssl: { rejectUnauthorized: false }
+    });
+
+    await pgPool.query(`set search_path to ${PG_SCHEMA}`);
+    console.log('Conectado a PostgreSQL (Supabase)');
 }
 
-iniciarBaseDeDatos();
-
-// En server.js, agrega esto después de app.use(cors());
-app.use(express.static('../frontend')); // Sirve los archivos de la carpeta hermana
-
-// --- 2. FUNCIÓN "TRADUCTORA" (La Magia) ---
-// Esta función permite que tus rutas no sepan qué base de datos hay detrás.
-async function ejecutarConsulta(sql, params = []) {
-    try {
-        if (DB_TYPE === 'postgres') {
-            // TRUCO: Postgres usa $1, $2... MySQL usa ?
-            // Convertimos los '?' de MySQL a '$1, $2' para Postgres automáticamente
-            let i = 1;
-            const sqlPg = sql.replace(/\?/g, () => `$${i++}`);
-            
-            const res = await pgPool.query(sqlPg, params);
-            return res.rows; // Postgres devuelve los datos aquí
-        } else {
-            // MySQL
-            const [rows] = await mysqlPool.execute(sql, params);
-            return rows;
-        }
-    } catch (error) {
-        console.error("❌ Error en Base de Datos:", error.message);
-        throw error; // Lanzamos el error para que la ruta lo maneje
-    }
+// ---------- Capa de acceso a datos ----------
+async function executeQuery(sql, params = []) {
+    const result = await pgPool.query(sql, params);
+    return result.rows;
 }
 
-/* =========================================
-   API ENDPOINTS (Tus rutas originales)
-   Ahora usan 'ejecutarConsulta' en vez de 'db.query'
-   ========================================= */
+// ----------  Middlewares base ----------
+app.use(cors());
+app.use(express.json());
+app.use(express.static('../frontend'));
 
-// 1. DATASET OFICIAL
-app.get('/api/departamentos', async (req, res) => {
+// ---------- Endpoints API ----------
+
+// Departamentos
+app.get('/api/departamentos', async (req, res, next) => {
     try {
         const sql = `
-            SELECT departamento, AVG(produccion_mwh) as promedio_mwh 
-            FROM dataset_produccion 
-            GROUP BY departamento
-        `;
-        const results = await ejecutarConsulta(sql);
+            SELECT departamento, AVG(produccion_mwh) AS promedio_mwh
+            FROM hackathon_solar.dataset_produccion
+            GROUP BY departamento`;
+        const results = await executeQuery(sql);
         res.json(results);
-    } catch (err) {
-        res.status(500).json({ error: "Error obteniendo departamentos" });
+    } catch (error) {
+        next(error);
     }
 });
 
-// 2. MUNICIPIOS
-app.get('/api/municipios/:dpto', async (req, res) => {
+// Municipios por departamento
+app.get('/api/municipios/:dpto', async (req, res, next) => {
     try {
         const { dpto } = req.params;
-        const sql = 'SELECT municipio FROM lista_municipios WHERE departamento = ?';
-        // Pasamos 'dpto' como parámetro seguro
-        const results = await ejecutarConsulta(sql, [dpto]);
+        const sql = `
+              SELECT municipio 
+              FROM hackathon_solar.lista_municipios 
+              WHERE departamento = $1`;
+        const results = await executeQuery(sql, [dpto]);
         res.json(results);
-    } catch (err) {
-        res.status(500).json({ error: "Error obteniendo municipios" });
+    } catch (error) {
+        next(error);
     }
 });
 
-// 3. TARIFAS
-app.get('/api/tarifas', async (req, res) => {
+// Tarifas de energía
+app.get('/api/tarifas', async (req, res, next) => {
     try {
-        const sql = 'SELECT * FROM tarifas_energia';
-        const results = await ejecutarConsulta(sql);
+        const sql = 'SELECT * FROM hackathon_solar.tarifas_energia';
+        const results = await executeQuery(sql);
         res.json(results);
-    } catch (err) {
-        res.status(500).json({ error: "Error obteniendo tarifas" });
+    } catch (error) {
+        next(error);
     }
 });
 
-// Arrancar el servidor
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`🚀 Servidor Backend listo en puerto ${PORT} usando [${DB_TYPE.toUpperCase()}]`);
+// ---------- Manejo de errores ----------
+app.use((err, req, res, next) => {
+    console.error('Error no controlado:', err);
+    res.status(500).json({
+        error: 'Error interno del servidor',
+        message: process.env.NODE_ENV === 'production' ? undefined : err.message
+    });
 });
+
+
+
+// ---------- Arranque del servidor ----------
+initDatabase()
+    .then(() => {
+        app.listen(PORT, () => {
+            console.log(`Servidor backend escuchando en puerto ${PORT}`);
+        });
+    })
+    .catch((error) => {
+        console.error('No se pudo iniciar la base de datos:', error);
+        process.exit(1);
+    });
