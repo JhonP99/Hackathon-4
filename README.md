@@ -15,7 +15,7 @@ Esta aplicación web permite a las familias de la región Caribe simular con pre
 ## 🚀 Características Clave
 
 1.  **Backend Híbrido (Políglota):**
-    *   El sistema cuenta con una arquitectura inteligente capaz de conectarse a **MySQL** (para desarrollo local rápido) o **PostgreSQL** (para despliegue en la nube como Render/Railway) cambiando una sola línea de configuración.
+    *   El sistema cuenta con una arquitectura inteligente capaz de conectarse **PostgreSQL** alojado en supabase.
 
 2.  **Simulación Financiera Realista:**
     *   **Costo Fijo de Red:** Incluye impuestos y comercialización base (nunca promete una factura de $0).
