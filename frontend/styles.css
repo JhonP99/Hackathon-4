@@ -447,6 +447,7 @@ footer {
 /* Colores de las barras */
 .red-bar {
   background: linear-gradient(to top, #c0392b, #e74c3c);
+  height: 100%;
 }
 
 .teal-bar {
