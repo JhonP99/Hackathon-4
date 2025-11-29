@@ -11,7 +11,7 @@
 <body>
   <!-- HEADER -->
   <header class="main-header">
-    <h2><i class="fa-solid fa-solar-panel" style="color:#f1c40f;"></i> SolarPro</h2>
+    <h2><i class="fa-solid fa-solar-panel"></i> SolarPro</h2>
 
     <nav>
       <a href="#">Inicio</a>
@@ -47,7 +47,7 @@
 
           <label for="muniSelect">Municipio:</label>
           <select id="muniSelect">
-            <option value="">Seleccione un departamento</option>
+            <option value="" selected disabled>Seleccione un departamento</option>
           </select>
 
           <div class="divider"></div>
@@ -60,7 +60,7 @@
 
           <label for="consumoInput">Consumo mensual (kWh):</label>
           <input type="number" id="consumoInput" value="1000" min="1" />
-          <p id="consumoPromedioHint" class="small-info" style="margin-bottom: 15px;"></p>
+          <p id="consumoPromedioHint" class="small-info"></p>
 
           <label for="numPaneles">Paneles sugeridos:</label>
           <div class="panel-control">
@@ -68,7 +68,7 @@
             <input type="number" id="numPaneles" value="6" min="1" />
             <button type="button" onclick="cambiarPaneles(1)">+</button>
           </div>
-          <p id="explicacionPaneles" class="small-info" style="color: var(--primary-light);">Basado en tu consumo.</p>
+          <p id="explicacionPaneles" class="small-info" >Basado en tu consumo.</p>
 
           <label for="calidadSelect">Calidad del panel solar:</label>
           <select id="calidadSelect">
@@ -116,7 +116,7 @@
                 <div class="bar-group">
                     <span id="labelCostoActual" class="bar-value">$0</span>
                     <div class="bar-wrapper">
-                        <div class="bar red-bar" style="height: 100%;"></div>
+                        <div class="bar red-bar" ></div>
                     </div>
                     <span class="bar-label">Sin Paneles</span>
                 </div>
@@ -125,7 +125,7 @@
                 <div class="bar-group">
                     <span id="labelCostoPaneles" class="bar-value">$0</span>
                     <div class="bar-wrapper">
-                        <div id="barNewHeight" class="bar teal-bar" style="height: 0%;"></div>
+                        <div id="barNewHeight" class="bar teal-bar"></div>
                     </div>
                     <span class="bar-label">Con Paneles</span>
                 </div>
@@ -134,7 +134,7 @@
                 <div class="bar-group">
                     <span id="labelAhorro" class="bar-value">$0</span>
                     <div class="bar-wrapper">
-                        <div id="barSaveHeight" class="bar yellow-bar" style="height: 0%;"></div>
+                        <div id="barSaveHeight" class="bar yellow-bar"></div>
                     </div>
                     <span class="bar-label">Tu Ahorro</span>
                 </div>

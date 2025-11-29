@@ -49,7 +49,7 @@ function setupEventListeners() {
 
 function renderDepartamentos() {
     const select = document.getElementById("deptSelect");
-    select.innerHTML = '<option value="">-- Seleccione Dpto --</option>';
+    select.innerHTML = '<option value="" selected disabled>-- Seleccione Dpto --</option>';
     
     departamentosData.forEach(d => {
         const option = document.createElement("option");
@@ -157,14 +157,15 @@ window.cambiarPaneles = function(delta) {
     input.value = val;
 };
 
-// 4. SIMULACIÓN Y GRÁFICOS (FIXED)
+// 4. SIMULACIÓN Y GRÁFICOS
 
 window.calcularSimulacion = function() {
     // A. Validar
     const consumo = parseFloat(document.getElementById("consumoInput").value);
     const estratoJson = document.getElementById("estratoSelect").value;
-    
-    if(!estratoJson || !consumo) {
+    const dept = document.getElementById("deptSelect");
+    const muni = document.getElementById("muniSelect");
+    if(!estratoJson || !consumo || dept.selectedIndex <= 0 || muni.selectedIndex <= 0) {
         alert("Por favor verifica los datos ingresados.");
         return;
     }
@@ -201,9 +202,16 @@ window.calcularSimulacion = function() {
     updateChart(costoActual, costoActual - ahorro, ahorro);
 
     // F. Mostrar Sección
+    const estadoInicial = document.getElementById("estadoInicial");
     const resBox = document.getElementById("resultadosBox");
-    resBox.classList.remove("hidden");
-    resBox.scrollIntoView({ behavior: 'smooth' });
+
+    if (estadoInicial) {
+        estadoInicial.classList.add("hidden");
+    }
+    if (resBox) {
+        resBox.classList.remove("hidden");
+        resBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 };
 
 // Actualiza los datos informativos al pie
@@ -232,14 +240,14 @@ function updateChart(actual, nuevo, ahorro) {
     let pctNuevo = (nuevo / base) * 100;
     let pctAhorro = (ahorro / base) * 100;
 
-    // 3. Aplicar estilos (height) para activar la transición CSS
-    // Nota: La barra roja es estática visualmente, las otras se comparan contra ella.
+    // 3. Aplicar estilos
+    // TODO:Nota: La barra roja es estática visualmente, las otras se comparan contra ella.
     
-    // Barra Nueva (Verde Azulado)
+    // Barra Nueva
     const barNew = document.getElementById("barNewHeight");
     if(barNew) barNew.style.height = `${pctNuevo}%`;
 
-    // Barra Ahorro (Amarilla)
+    // Barra Ahorro
     const barSave = document.getElementById("barSaveHeight");
     if(barSave) barSave.style.height = `${pctAhorro}%`;
 }
@@ -247,30 +255,34 @@ function updateChart(actual, nuevo, ahorro) {
 
  // Limpia formulario, resetea textos y baja las gráficas a 0.
 window.resetearCalculadora = function() {
-    // 1. Ocultar caja de resultados
+    // 1. Ocultar caja de resultados y mostrar estado inicial
     const resBox = document.getElementById("resultadosBox");
-    resBox.classList.add("hidden");
+    const estadoInicial = document.getElementById("estadoInicial");
+
+    if (resBox) resBox.classList.add("hidden");
+    if (estadoInicial) estadoInicial.classList.remove("hidden");
 
     // 2. Resetear Formulario HTML
     document.getElementById("formCalc").reset();
-    
+
     // 3. Limpiar Textos de Resultados (Visual)
     document.getElementById("resEnergia").innerText = "0 kWh/mes";
     document.getElementById("resDinero").innerText = "$0";
     document.getElementById("resPorcentaje").innerText = "0%";
 
-    // 4. BAJAR GRÁFICAS A CERO (Para que la próxima vez se animen hacia arriba)
+    // 4. Bajar gráficas a cero
     const barNew = document.getElementById("barNewHeight");
     const barSave = document.getElementById("barSaveHeight");
-    if(barNew) barNew.style.height = "0%";
-    if(barSave) barSave.style.height = "0%";
+    if (barNew) barNew.style.height = "0%";
+    if (barSave) barSave.style.height = "0%";
 
-    // 5. Recalcular sugerencia base (para que el input de paneles no quede vacío)
+    // 5. Recalcular sugerencia base
     actualizarSugerencia();
 
     // 6. Volver arriba suavemente
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
+
 
 // Formato Moneda COP
 const formatMoney = (amount) => {

@@ -6,6 +6,7 @@
 }
 
 :root {
+  --panel-icon:#f1c40f;
   --primary: #1173d4;
   --primary-dark: #0a3d66;
   --primary-hover: #0d5ba8;
@@ -37,7 +38,7 @@ body {
   padding: .75rem 2rem;
   background: var(--background);
   border-bottom: 1px solid var(--border);
-  position: sticky;
+  position: static;
   top: 0;
   z-index: 10;
 }
@@ -49,6 +50,10 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.fa-solar-panel{
+  color:var(--panel-icon);
 }
 
 nav {
@@ -254,8 +259,10 @@ nav a:focus {
 
 .small-info {
   font-size: 0.875rem;
-  color: var(--text-muted);
+  color: var(--primary-light);
   margin-top: 0.25rem;
+  margin-bottom: 15px;
+
 }
 
 /*  RESULTADOS  */
@@ -372,8 +379,8 @@ details p {
 footer {
   text-align: center;
   border-top: 1px solid var(--border);
-  background-color: var(--background);
-  color: var(--text-muted);
+  background-color: var(--primary-dark);
+  color: white;
   padding: 1rem;
   font-size: 0.875rem;
 }
@@ -448,4 +455,8 @@ footer {
 
 .yellow-bar {
   background: linear-gradient(to top, #f39c12, #f1c40f);
+}
+
+.hidden {
+  display: none !important;
 }
