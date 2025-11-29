@@ -28,7 +28,7 @@
             <h3><i class="fa-solid fa-map-location-dot"></i> Ubicación</h3>
 
             <label>Departamento:</label>
-            <select id="deptSelect" onchange="filtrarMunicipios()">
+            <select id="deptSelect">
                 <option value="">Cargando datos...</option>
             </select>
 
@@ -49,7 +49,7 @@
             </p>
 
             <label>Consumo mensual actual (kWh):</label>
-            <input type="number" id="consumoInput" value="1000" oninput="actualizarSugerencia()">
+            <input type="number" id="consumoInput" value="1000">
             <p class="hint" id="consumoPromedioHint">Consumo promedio: -- kWh/mes</p>
 
             <div class="label-row">
@@ -58,20 +58,20 @@
             </div>
 
             <div class="panel-input">
-                <button type="button" onclick="cambiarPaneles(-1)">-</button>
+                <button id="btnPanelMinus" type="button">-</button>
                 <input type="number" id="numPaneles" value="6">
-                <button type="button" onclick="cambiarPaneles(1)">+</button>
+                <button id="btnPanelPlus" type="button">+</button>
             </div>
             <p class="hint" id="explicacionPaneles">Basado en tu consumo actual.</p>
 
             <label>Seleccione la calidad del panel solar:</label>
-            <select id="calidadSelect" onchange="actualizarSugerencia()">
+            <select id="calidadSelect">
                 <option value="0.18">Estándar - 18% Eficiencia</option>
                 <option value="0.21">Alta - 21% Eficiencia</option>
                 <option value="0.25" selected>Superior - 25% Eficiencia</option>
             </select>
 
-            <button class="btn-calc" onclick="calcularSimulacion()">CALCULAR AHORRO</button>
+            <button id="btnCalc" class="btn-calc">CALCULAR AHORRO</button>
         </section>
 
         <!-- COLUMNA DERECHA: RESULTADOS -->
@@ -159,13 +159,14 @@
                 </div>
 
                 <!-- BOTÓN REFRESCAR -->
-                <button class="btn-reload" onclick="resetearCalculadora()">
+                <button id="btnReload" class="btn-reload">
                     <i class="fa-solid fa-rotate-left"></i> NUEVA SIMULACIÓN
                 </button>
 
             </section>
         </div>
     </main>
+
     <section class="faq-section">
         <details>
             <summary>¿Cómo funciona la simulación?</summary>
@@ -174,6 +175,7 @@
     </section>
 
 </div>
+
 <script src="script.js"></script>
 </body>
 </html>
