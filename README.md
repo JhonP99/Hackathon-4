@@ -1,10 +1,10 @@
-# ☀️ Calculadora Solar Pro - Simulador Energético del Caribe
+# Calculadora Solar Pro - Simulador Energético del Caribe
 
 ![Estado](https://img.shields.io/badge/Estado-Finalizado-success)
 ![Versión](https://img.shields.io/badge/Versión-1.0.0-blue)
 ![Stack](https://img.shields.io/badge/Tech-NodeJS_PostgreSQL-orange)
 
-## 📖 Descripción
+## Descripción
 
 **Calculadora Solar Pro** es una herramienta tecnológica desarrollada para el **Reto: Simulador de Costos Energéticos para Hogares Vulnerables**.
 
@@ -12,7 +12,7 @@ Esta aplicación web permite a las familias de la región Caribe simular con pre
 
 ---
 
-## 🚀 Características Clave
+## Características Clave
 
 1.  **Backend:**
     *   El sistema cuenta con una arquitectura inteligente capaz de conectarse **PostgreSQL** alojado en supabase.
@@ -26,7 +26,7 @@ Esta aplicación web permite a las familias de la región Caribe simular con pre
 
 ---
 
-## 🛠️ Stack Tecnológico
+## Stack Tecnológico
 
 *   **Frontend:** HTML5, CSS3 (Grid/Flexbox), JavaScript (Vanilla ES6+).
 *   **Backend:** Node.js, Express.
@@ -36,7 +36,7 @@ Esta aplicación web permite a las familias de la región Caribe simular con pre
 
 ---
 
-## 📂 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```text
 RETO_SOLAR2/
