@@ -59,13 +59,13 @@
           <p id="precioKwhHint" class="small-info"></p>
 
           <label for="consumoInput">Consumo mensual (kWh):</label>
-          <input type="number" id="consumoInput" value="1000" min="1" />
+          <input type="text" id="consumoInput" value="1000" min="1" />
           <p id="consumoPromedioHint" class="small-info"></p>
 
           <label for="numPaneles">Paneles sugeridos:</label>
           <div class="panel-control">
             <button type="button" onclick="cambiarPaneles(-1)">-</button>
-            <input type="number" id="numPaneles" value="6" min="1" />
+            <input type="text" id="numPaneles" value="6" min="1" />
             <button type="button" onclick="cambiarPaneles(1)">+</button>
           </div>
           <p id="explicacionPaneles" class="small-info" >Basado en tu consumo.</p>
@@ -107,7 +107,7 @@
             </div>
           </div>
 
-          <!-- 2. Gráfico Visual (NUEVO) -->
+          <!-- 2. Gráfico Visual -->
           <div class="chart-container">
             <h4 style="text-align: center; color: var(--text-muted); margin-bottom: 20px; font-weight:500;">Comparativa de Costos Mensuales</h4>
             

@@ -1,294 +1,328 @@
+// ================== CONFIGURACIÓN Y CONSTANTES ==================
+
 const API_URL = 'http://localhost:3000/api';
-const DEFAULT_SOLAR_HOURS = 5.0; // Valor de respaldo
+const DEFAULT_SOLAR_HOURS = 5.0;
 
-// Variables globales para datos
-let departamentosData = []; 
-let tarifasDB = [];
+// ================== ESTADO DE APLICACIÓN ==================
 
-document.addEventListener("DOMContentLoaded", () => {
+const appState = {
+    departamentos: [],
+    tarifas: []
+};
+
+// ================== UTILIDADES GENERALES ==================
+
+const formatMoney = (amount) =>
+    new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        maximumFractionDigits: 0
+    }).format(amount);
+
+const getElement = (id) => document.getElementById(id);
+
+const setText = (id, text) => {
+    const el = getElement(id);
+    if (el) el.innerText = text;
+};
+
+const setHTML = (id, html) => {
+    const el = getElement(id);
+    if (el) el.innerHTML = html;
+};
+
+const safeParseFloat = (value, fallback = 0) => {
+    const parsed = parseFloat(value);
+    return Number.isNaN(parsed) ? fallback : parsed;
+};
+
+const safeParseInt = (value, fallback = 0) => {
+    const parsed = parseInt(value, 10);
+    return Number.isNaN(parsed) ? fallback : parsed;
+};
+
+// ================== SERVICIOS DE DATOS (API) ==================
+
+async function fetchJson(url) {
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Error al llamar ${url}: HTTP ${response.status}`);
+    }
+    return response.json();
+}
+
+async function loadInitialData() {
+    const [departamentos, tarifas] = await Promise.all([
+        fetchJson(`${API_URL}/departamentos`),
+        fetchJson(`${API_URL}/tarifas`)
+    ]);
+
+    appState.departamentos = departamentos;
+    appState.tarifas = tarifas;
+}
+
+// ================== INICIALIZACIÓN ==================
+
+document.addEventListener('DOMContentLoaded', () => {
     initApp();
 });
 
 async function initApp() {
     try {
-        console.log("Iniciando sistema...");
+        console.log('Iniciando sistema...');
 
-        const [resDeptos, resTarifas] = await Promise.all([
-            fetch(`${API_URL}/departamentos`),
-            fetch(`${API_URL}/tarifas`)
-        ]);
+        await loadInitialData();
 
-        if (!resDeptos.ok || !resTarifas.ok) throw new Error("Fallo en API");
-
-        departamentosData = await resDeptos.json();
-        tarifasDB = await resTarifas.json();
-
-        // Renderizado inicial
         renderDepartamentos();
         renderEstratos();
         setupEventListeners();
-
-        // Primera actualización visual
         actualizarSugerencia();
 
-        console.log("Sistema cargado correctamente.");
-
+        console.log('Sistema cargado correctamente.');
     } catch (error) {
-        console.error("Error:", error);
-        alert("No se pudo conectar con el servidor. Revisa que el Backend esté corriendo.");
+        console.error('Error:', error);
+        alert('No se pudo conectar con el servidor. Revisa que el Backend esté corriendo.');
     }
 }
 
+// ================== GESTIÓN DE UI ==================
+
 function setupEventListeners() {
-    document.getElementById("deptSelect").addEventListener("change", filtrarMunicipios);
-    document.getElementById("consumoInput").addEventListener("input", actualizarSugerencia);
-    document.getElementById("calidadSelect").addEventListener("change", actualizarSugerencia);
+    const deptSelect = getElement('deptSelect');
+    const consumoInput = getElement('consumoInput');
+    const calidadSelect = getElement('calidadSelect');
+
+    if (deptSelect) deptSelect.addEventListener('change', filtrarMunicipios);
+    if (consumoInput) consumoInput.addEventListener('input', actualizarSugerencia);
+    if (calidadSelect) calidadSelect.addEventListener('change', actualizarSugerencia);
 }
 
-// 2. GESTIÓN DE LA UI
-
 function renderDepartamentos() {
-    const select = document.getElementById("deptSelect");
+    const select = getElement('deptSelect');
+    if (!select) return;
+
     select.innerHTML = '<option value="" selected disabled>-- Seleccione Dpto --</option>';
-    
-    departamentosData.forEach(d => {
-        const option = document.createElement("option");
-        option.value = d.departamento;
-        option.innerText = d.departamento;
-        // Guardamos dato climático en el HTML
-        option.setAttribute('data-mwh', d.promedio_mwh);
+
+    appState.departamentos.forEach((dpto) => {
+        const option = document.createElement('option');
+        option.value = dpto.departamento;
+        option.innerText = dpto.departamento;
+        option.setAttribute('data-mwh', dpto.promedio_mwh);
         select.appendChild(option);
     });
 }
 
 function renderEstratos() {
-    const select = document.getElementById("estratoSelect");
-    select.innerHTML = ""; 
+    const select = getElement('estratoSelect');
+    if (!select) return;
 
-    tarifasDB.forEach(t => {
-        const option = document.createElement("option");
-        option.value = JSON.stringify(t); 
-        option.innerText = `Estrato ${t.estrato}`;
+    select.innerHTML = '';
+
+    appState.tarifas.forEach((tarifa) => {
+        const option = document.createElement('option');
+        option.value = JSON.stringify(tarifa);
+        option.innerText = `Estrato ${tarifa.estrato}`;
         select.appendChild(option);
     });
 
-    select.addEventListener("change", updateEstratoInfo);
-    
-    // Seleccionar el primero por defecto
-    if(tarifasDB.length > 0) {
-        select.selectedIndex = 0; 
+    select.addEventListener('change', updateEstratoInfo);
+
+    if (appState.tarifas.length > 0) {
+        select.selectedIndex = 0;
         updateEstratoInfo();
     }
 }
 
+// ================== LÓGICA DE UBICACIÓN ==================
+
 async function filtrarMunicipios() {
-    const dptoNombre = document.getElementById("deptSelect").value;
-    const muniSelect = document.getElementById("muniSelect");
-    
+    const dptoSelect = getElement('deptSelect');
+    const muniSelect = getElement('muniSelect');
+
+    if (!dptoSelect || !muniSelect) return;
+
+    const dptoNombre = dptoSelect.value;
     muniSelect.innerHTML = '<option value="">Cargando...</option>';
-    
+
     if (!dptoNombre) {
         muniSelect.innerHTML = '<option value="">Seleccione un departamento</option>';
         return;
     }
 
     try {
-        const resp = await fetch(`${API_URL}/municipios/${dptoNombre}`);
-        const ciudades = await resp.json();
-        
+        const ciudades = await fetchJson(`${API_URL}/municipios/${dptoNombre}`);
+
         muniSelect.innerHTML = '<option value="">-- Seleccione Ciudad --</option>';
-        ciudades.forEach(c => {
-            const opt = document.createElement("option");
-            opt.value = c.municipio;
-            opt.innerText = c.municipio;
+        ciudades.forEach((ciudad) => {
+            const opt = document.createElement('option');
+            opt.value = ciudad.municipio;
+            opt.innerText = ciudad.municipio;
             muniSelect.appendChild(opt);
         });
-        
-        actualizarSugerencia(); 
 
-    } catch (e) {
-        console.error("Error municipios:", e);
+        actualizarSugerencia();
+    } catch (error) {
+        console.error('Error municipios:', error);
         muniSelect.innerHTML = '<option value="">Error al cargar</option>';
     }
 }
 
 function updateEstratoInfo() {
-    const select = document.getElementById("estratoSelect");
-    if(!select.value) return;
-    
-    const d = JSON.parse(select.value);
-    
-    const setText = (id, text) => {
-        const el = document.getElementById(id);
-        if (el) el.innerHTML = text; 
-    };
+    const select = getElement('estratoSelect');
+    if (!select || !select.value) return;
 
-    setText("consumoPromedioHint", `Consumo promedio: ${d.consumo_promedio} kWh/mes`);
-    setText("precioKwhHint", `<i class="fa-solid fa-tag"></i> Tarifa: <strong>$${d.tarifa_kwh} /kWh</strong>`);
+    const data = JSON.parse(select.value);
+
+    setText('consumoPromedioHint', `Consumo promedio: ${data.consumo_promedio} kWh/mes`);
+    setHTML(
+        'precioKwhHint',
+        `<i class="fa-solid fa-tag"></i> Tarifa: <strong>$${data.tarifa_kwh} /kWh</strong>`
+    );
 }
 
-// 3. LÓGICA DE CÁLCULO
+// ================== LÓGICA DE CÁLCULO ==================
 
-const getSolarData = () => {
-    const deptSelect = document.getElementById("deptSelect");
+function getSolarData() {
+    const deptSelect = getElement('deptSelect');
     if (!deptSelect || deptSelect.selectedIndex <= 0) return DEFAULT_SOLAR_HOURS;
 
-    const mwh = parseFloat(deptSelect.options[deptSelect.selectedIndex].getAttribute('data-mwh'));
-    return mwh ? (mwh / 60) : DEFAULT_SOLAR_HOURS;
-};
+    const selectedOption = deptSelect.options[deptSelect.selectedIndex];
+    const mwh = safeParseFloat(selectedOption.getAttribute('data-mwh'));
 
-function actualizarSugerencia() {
-    const consumo = parseFloat(document.getElementById("consumoInput").value) || 0;
-    const horasSol = getSolarData();
-    
-    const produccionPanel = 0.55 * horasSol * 30 * 0.75; 
-    
-    let necesarios = Math.ceil(consumo / produccionPanel);
-    if(necesarios < 1) necesarios = 1;
-
-    const inputPaneles = document.getElementById("numPaneles");
-    if(inputPaneles) inputPaneles.value = necesarios;
+    return mwh ? mwh / 60 : DEFAULT_SOLAR_HOURS;
 }
 
-window.cambiarPaneles = function(delta) {
-    const input = document.getElementById("numPaneles");
-    let val = parseInt(input.value) + delta;
-    if(val < 1) val = 1;
-    input.value = val;
+function actualizarSugerencia() {
+    const consumo = safeParseFloat(getElement('consumoInput')?.value, 0);
+    const horasSol = getSolarData();
+
+    const produccionPanel = 0.55 * horasSol * 30 * 0.75;
+
+    let panelesNecesarios = produccionPanel > 0
+        ? Math.ceil(consumo / produccionPanel)
+        : 1;
+
+    if (panelesNecesarios < 1) panelesNecesarios = 1;
+
+    const inputPaneles = getElement('numPaneles');
+    if (inputPaneles) inputPaneles.value = panelesNecesarios;
+}
+
+window.cambiarPaneles = function cambiarPaneles(delta) {
+    const input = getElement('numPaneles');
+    if (!input) return;
+
+    const valorActual = safeParseInt(input.value, 1);
+    const nuevoValor = Math.max(valorActual + delta, 1);
+
+    input.value = nuevoValor;
 };
 
-// 4. SIMULACIÓN Y GRÁFICOS
+// ================== SIMULACIÓN Y RESULTADOS ==================
 
-window.calcularSimulacion = function() {
-    // A. Validar
-    const consumo = parseFloat(document.getElementById("consumoInput").value);
-    const estratoJson = document.getElementById("estratoSelect").value;
-    const dept = document.getElementById("deptSelect");
-    const muni = document.getElementById("muniSelect");
-    if(!estratoJson || !consumo || dept.selectedIndex <= 0 || muni.selectedIndex <= 0) {
-        alert("Por favor verifica los datos ingresados.");
+window.calcularSimulacion = function calcularSimulacion() {
+    const consumo = safeParseFloat(getElement('consumoInput')?.value);
+    const estratoJson = getElement('estratoSelect')?.value;
+    const dept = getElement('deptSelect');
+    const muni = getElement('muniSelect');
+
+    const datosInvalidos =
+        !estratoJson ||
+        !consumo ||
+        !dept ||
+        !muni ||
+        dept.selectedIndex <= 0 ||
+        muni.selectedIndex <= 0;
+
+    if (datosInvalidos) {
+        alert('Por favor verifica los datos ingresados.');
         return;
     }
 
-    // B. Calcular
     const horasSol = getSolarData();
-    const paneles = parseInt(document.getElementById("numPaneles").value);
-    const eficiencia = parseFloat(document.getElementById("calidadSelect").value);
+    const paneles = safeParseInt(getElement('numPaneles')?.value, 0);
+    const eficiencia = safeParseFloat(getElement('calidadSelect')?.value, 0.18);
     const tarifa = JSON.parse(estratoJson).tarifa_kwh;
 
-    const generacion = paneles * 0.55 * horasSol * 30 * (0.75 + (eficiencia - 0.18));
+    const generacion =
+        paneles * 0.55 * horasSol * 30 * (0.75 + (eficiencia - 0.18));
     const costoActual = consumo * tarifa;
-    
-    const costoFijo = Math.max(costoActual * 0.15, 20000); 
-    let ahorro = Math.min(generacion * tarifa, costoActual - costoFijo);
 
+    const costoFijo = Math.max(costoActual * 0.15, 20000);
+    let ahorro = Math.min(generacion * tarifa, costoActual - costoFijo);
     if (ahorro < 0) ahorro = 0;
-    
+
     const reduccionPorc = (ahorro / costoActual) * 100;
 
-    // C. Mostrar Resultados Textuales
-    document.getElementById("resEnergia").innerText = Math.round(generacion) + " kWh/mes";
-    document.getElementById("resDinero").innerText = formatMoney(ahorro);
-    document.getElementById("resPorcentaje").innerText = reduccionPorc.toFixed(1) + "%";
-    
-    // Color del porcentaje
-    const color = reduccionPorc > 50 ? "#2ecc71" : "#f1c40f";
-    document.getElementById("resPorcentaje").style.color = color;
+    setText('resEnergia', `${Math.round(generacion)} kWh/mes`);
+    setText('resDinero', formatMoney(ahorro));
+    setText('resPorcentaje', `${reduccionPorc.toFixed(1)}%`);
 
-    // D. Actualizar Footer
+    const colorPorcentaje = reduccionPorc > 50 ? '#2ecc71' : '#f1c40f';
+    const resPorcentajeEl = getElement('resPorcentaje');
+    if (resPorcentajeEl) resPorcentajeEl.style.color = colorPorcentaje;
+
     updateFooterResults(consumo, tarifa, horasSol);
-
-    // E. Actualizar Gráfico Visual
     updateChart(costoActual, costoActual - ahorro, ahorro);
-
-    // F. Mostrar Sección
-    const estadoInicial = document.getElementById("estadoInicial");
-    const resBox = document.getElementById("resultadosBox");
-
-    if (estadoInicial) {
-        estadoInicial.classList.add("hidden");
-    }
-    if (resBox) {
-        resBox.classList.remove("hidden");
-        resBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    toggleResultsVisibility(true);
 };
 
-// Actualiza los datos informativos al pie
 function updateFooterResults(consumo, tarifa, sol) {
-    const setText = (id, txt) => { const el = document.getElementById(id); if(el) el.innerText = txt; };
-    setText("infoConsumo", `${consumo} kWh`);
-    setText("infoTarifa", formatMoney(tarifa));
-    setText("infoSol", `${sol.toFixed(1)} h/día`);
+    setText('infoConsumo', `${consumo} kWh`);
+    setText('infoTarifa', formatMoney(tarifa));
+    setText('infoSol', `${sol.toFixed(1)} h/día`);
 }
 
-/**
- * ACTUALIZA LAS BARRAS DEL GRÁFICO
- * Calcula la altura porcentual para la animación CSS
- */
 function updateChart(actual, nuevo, ahorro) {
-    // 1. Actualizar etiquetas de dinero
-    document.getElementById("labelCostoActual").innerText = formatMoney(actual);
-    document.getElementById("labelCostoPaneles").innerText = formatMoney(nuevo);
-    document.getElementById("labelAhorro").innerText = formatMoney(ahorro);
+    setText('labelCostoActual', formatMoney(actual));
+    setText('labelCostoPaneles', formatMoney(nuevo));
+    setText('labelAhorro', formatMoney(ahorro));
 
-    // 2. Calcular Alturas relativas (La barra roja "actual" es la referencia 100%)
-    // Si 'actual' es 0, evitamos división por cero.
     const base = actual > 0 ? actual : 1;
-    
-    // Calculamos porcentaje simple
-    let pctNuevo = (nuevo / base) * 100;
-    let pctAhorro = (ahorro / base) * 100;
+    const pctNuevo = (nuevo / base) * 100;
+    const pctAhorro = (ahorro / base) * 100;
 
-    // 3. Aplicar estilos
-    // TODO:Nota: La barra roja es estática visualmente, las otras se comparan contra ella.
-    
-    // Barra Nueva
-    const barNew = document.getElementById("barNewHeight");
-    if(barNew) barNew.style.height = `${pctNuevo}%`;
+    const barNew = getElement('barNewHeight');
+    const barSave = getElement('barSaveHeight');
 
-    // Barra Ahorro
-    const barSave = document.getElementById("barSaveHeight");
-    if(barSave) barSave.style.height = `${pctAhorro}%`;
+    if (barNew) barNew.style.height = `${pctNuevo}%`;
+    if (barSave) barSave.style.height = `${pctAhorro}%`;
 }
 
+// ================== ESTADO INICIAL / RESET ==================
 
- // Limpia formulario, resetea textos y baja las gráficas a 0.
-window.resetearCalculadora = function() {
-    // 1. Ocultar caja de resultados y mostrar estado inicial
-    const resBox = document.getElementById("resultadosBox");
-    const estadoInicial = document.getElementById("estadoInicial");
+function toggleResultsVisibility(showResults) {
+    const estadoInicial = getElement('estadoInicial');
+    const resBox = getElement('resultadosBox');
 
-    if (resBox) resBox.classList.add("hidden");
-    if (estadoInicial) estadoInicial.classList.remove("hidden");
+    if (!estadoInicial || !resBox) return;
 
-    // 2. Resetear Formulario HTML
-    document.getElementById("formCalc").reset();
+    if (showResults) {
+        estadoInicial.classList.add('hidden');
+        resBox.classList.remove('hidden');
+        resBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+        resBox.classList.add('hidden');
+        estadoInicial.classList.remove('hidden');
+    }
+}
 
-    // 3. Limpiar Textos de Resultados (Visual)
-    document.getElementById("resEnergia").innerText = "0 kWh/mes";
-    document.getElementById("resDinero").innerText = "$0";
-    document.getElementById("resPorcentaje").innerText = "0%";
+window.resetearCalculadora = function resetearCalculadora() {
+    toggleResultsVisibility(false);
 
-    // 4. Bajar gráficas a cero
-    const barNew = document.getElementById("barNewHeight");
-    const barSave = document.getElementById("barSaveHeight");
-    if (barNew) barNew.style.height = "0%";
-    if (barSave) barSave.style.height = "0%";
+    const form = getElement('formCalc');
+    if (form) form.reset();
 
-    // 5. Recalcular sugerencia base
+    setText('resEnergia', '0 kWh/mes');
+    setText('resDinero', '$0');
+    setText('resPorcentaje', '0%');
+
+    const barNew = getElement('barNewHeight');
+    const barSave = getElement('barSaveHeight');
+    if (barNew) barNew.style.height = '0%';
+    if (barSave) barSave.style.height = '0%';
+
     actualizarSugerencia();
 
-    // 6. Volver arriba suavemente
     window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-
-// Formato Moneda COP
-const formatMoney = (amount) => {
-    return new Intl.NumberFormat('es-CO', { 
-        style: 'currency', 
-        currency: 'COP', 
-        maximumFractionDigits: 0 
-    }).format(amount);
 };
