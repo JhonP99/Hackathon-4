@@ -24,8 +24,13 @@ async function initDatabase() {
         ssl: { rejectUnauthorized: false }
     });
 
-    await pgPool.query(`set search_path to ${PG_SCHEMA}`);
-    console.log('Conectado a PostgreSQL (Supabase)');
+    try {
+        await pgPool.query(`set search_path to ${PG_SCHEMA}`);
+        console.log('Conectado a PostgreSQL (Supabase)');
+    }catch (err){
+        console.error("Error en schema ",err);
+    }
+
 }
 
 // ---------- Capa de acceso a datos ----------
@@ -47,7 +52,8 @@ app.get('/api/departamentos', async (req, res, next) => {
         const sql = `
             SELECT departamento, AVG(produccion_mwh) AS promedio_mwh
             FROM hackathon_solar.dataset_produccion
-            GROUP BY departamento`;
+            GROUP BY departamento
+            ORDER BY departamento ASC`;
         const results = await executeQuery(sql);
         res.json(results);
     } catch (error) {

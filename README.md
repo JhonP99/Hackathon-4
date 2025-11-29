@@ -1,10 +1,10 @@
-# ☀️ Calculadora Solar Pro - Simulador Energético del Caribe
+# Calculadora Solar Pro - Simulador Energético del Caribe
 
 ![Estado](https://img.shields.io/badge/Estado-Finalizado-success)
 ![Versión](https://img.shields.io/badge/Versión-1.0.0-blue)
-![Stack](https://img.shields.io/badge/Tech-NodeJS_MySQL_PostgreSQL-orange)
+![Stack](https://img.shields.io/badge/Tech-NodeJS_PostgreSQL-orange)
 
-## 📖 Descripción
+## Descripción
 
 **Calculadora Solar Pro** es una herramienta tecnológica desarrollada para el **Reto: Simulador de Costos Energéticos para Hogares Vulnerables**.
 
@@ -12,10 +12,10 @@ Esta aplicación web permite a las familias de la región Caribe simular con pre
 
 ---
 
-## 🚀 Características Clave
+## Características Clave
 
-1.  **Backend Híbrido (Políglota):**
-    *   El sistema cuenta con una arquitectura inteligente capaz de conectarse a **MySQL** (para desarrollo local rápido) o **PostgreSQL** (para despliegue en la nube como Render/Railway) cambiando una sola línea de configuración.
+1.  **Backend:**
+    *   El sistema cuenta con una arquitectura inteligente capaz de conectarse **PostgreSQL** alojado en supabase.
 
 2.  **Simulación Financiera Realista:**
     *   **Costo Fijo de Red:** Incluye impuestos y comercialización base (nunca promete una factura de $0).
@@ -26,18 +26,16 @@ Esta aplicación web permite a las familias de la región Caribe simular con pre
 
 ---
 
-## 🛠️ Stack Tecnológico
+## Stack Tecnológico
 
 *   **Frontend:** HTML5, CSS3 (Grid/Flexbox), JavaScript (Vanilla ES6+).
 *   **Backend:** Node.js, Express.
-*   **Base de Datos:**
-    *   Librería `mysql2` para conexiones locales.
-    *   Librería `pg` para conexiones PostgreSQL.
-*   **Herramientas:** CORS, Dotenv.
+*   **Base de Datos:** Conexiones PostgreSQL.
+*   **Herramientas:** CORS.
 
 ---
 
-## 📂 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```text
 RETO_SOLAR2/
