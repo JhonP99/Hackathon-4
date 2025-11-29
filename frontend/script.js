@@ -1,322 +1,386 @@
-/**
- * ============================================================================
- * CALCULADORA SOLAR - LÓGICA DEL CLIENTE
- * ============================================================================
- * Autor: [Tu Nombre / Equipo]
- * Descripción: Gestiona la carga de datos regionales, cálculo fotovoltaico
- * y renderizado de gráficos de ahorro.
- */
-
-// --- CONSTANTES Y CONFIGURACIÓN ---
 const API_URL = 'http://localhost:3000/api';
-const DEFAULT_SOLAR_HOURS = 5.0; // Promedio Colombia por defecto
+const DEFAULT_SOLAR_HOURS = 5.0; // Promedio Colombia
 
-// --- VARIABLES GLOBALES ---
-let departamentosData = []; 
-let tarifasDB = [];
+class SolarCalculatorApp {
+    constructor(apiUrl) {
+        this.apiUrl = apiUrl;
+        this.departamentosData = [];
+        this.tarifasDB = [];
 
-// --- HELPERS (Funciones de Ayuda Reutilizables) ---
+        // Referencias DOM
+        this.$deptSelect = document.getElementById('deptSelect');
+        this.$muniSelect = document.getElementById('muniSelect');
+        this.$estratoSelect = document.getElementById('estratoSelect');
+        this.$consumoInput = document.getElementById('consumoInput');
+        this.$calidadSelect = document.getElementById('calidadSelect');
+        this.$numPaneles = document.getElementById('numPaneles');
+        this.$precioKwhHint = document.getElementById('precioKwhHint');
+        this.$consumoPromedioHint = document.getElementById('consumoPromedioHint');
+        this.$explicacionPaneles = document.getElementById('explicacionPaneles');
 
-/**
- * Formatea un número a formato moneda Colombiana (COP) sin decimales.
- */
-const formatMoney = (amount) => {
-    return new Intl.NumberFormat('es-CO', { 
-        style: 'currency', 
-        currency: 'COP', 
-        maximumFractionDigits: 0 
-    }).format(amount);
-};
+        this.$resEnergia = document.getElementById('resEnergia');
+        this.$resDinero = document.getElementById('resDinero');
+        this.$resPorcentaje = document.getElementById('resPorcentaje');
 
-/**
- * Obtiene las Horas Sol Pico (HSP) de la región seleccionada.
- * Responde a la necesidad de variar el cálculo según el clima de la región.
- */
-const getSolarData = () => {
-    const deptSelect = document.getElementById("deptSelect");
-    
-    // Si no hay selección válida, devolvemos el promedio nacional
-    if (!deptSelect || deptSelect.selectedIndex <= 0) return DEFAULT_SOLAR_HOURS;
+        this.$labelCostoActual = document.getElementById('labelCostoActual');
+        this.$labelCostoPaneles = document.getElementById('labelCostoPaneles');
+        this.$labelAhorro = document.getElementById('labelAhorro');
+        this.$barNewHeight = document.getElementById('barNewHeight');
+        this.$barSaveHeight = document.getElementById('barSaveHeight');
 
-    // Obtenemos el atributo oculto guardado en el <option>
-    const mwh = parseFloat(deptSelect.options[deptSelect.selectedIndex].getAttribute('data-mwh'));
-    
-    // Conversión: MWh mensual industrial -> Horas Sol Pico diarias (Aprox / 60)
-    return mwh ? (mwh / 60) : DEFAULT_SOLAR_HOURS;
-};
+        this.$infoConsumo = document.getElementById('infoConsumo');
+        this.$infoTarifa = document.getElementById('infoTarifa');
+        this.$infoSol = document.getElementById('infoSol');
 
+        this.$estadoInicial = document.getElementById('estadoInicial');
+        this.$resultadosBox = document.getElementById('resultadosBox');
+        this.$container = document.querySelector('.container');
 
-/* ======================================================
-   1. INICIALIZACIÓN Y CARGA DE DATOS
-   ====================================================== */
+        this.$btnCalc = document.getElementById('btnCalc');
+        this.$btnPanelMinus = document.getElementById('btnPanelMinus');
+        this.$btnPanelPlus = document.getElementById('btnPanelPlus');
+        this.$btnReload = document.getElementById('btnReload');
+    }
 
-document.addEventListener("DOMContentLoaded", async () => {
-    console.log("🚀 Iniciando sistema...");
-    await initApp();
-});
+    // ---------- Inicialización ----------
+    async init() {
+        try {
+            console.log('🚀 Iniciando sistema...');
+            await this.loadInitialData();
+            this.initUIEvents();
+            this.actualizarSugerencia();
+        } catch (error) {
+            console.error('❌ Error Crítico:', error);
+            alert('Error de conexión. Verifique que el servidor Backend esté activo.');
+        }
+    }
 
-async function initApp() {
-    try {
-        // Carga paralela de datos para mayor velocidad
-        const [resDeptos, resTarifas] = await Promise.all([
-            fetch(`${API_URL}/departamentos`),
-            fetch(`${API_URL}/tarifas`)
+    async loadInitialData() {
+        const [departamentos, tarifas] = await Promise.all([
+            this.fetchJson(`${this.apiUrl}/departamentos`),
+            this.fetchJson(`${this.apiUrl}/tarifas`)
         ]);
 
-        if (!resDeptos.ok || !resTarifas.ok) throw new Error("Error de comunicación con API");
+        this.departamentosData = departamentos;
+        this.tarifasDB = tarifas;
 
-        departamentosData = await resDeptos.json();
-        tarifasDB = await resTarifas.json();
+        this.renderDepartamentos();
+        this.renderEstratos();
 
-        console.log("✅ Datos regionales y tarifas cargados.");
-
-        // Inicializar UI
-        renderDepartamentos();
-        renderEstratos();
-        
-        // Ejecutar primera sugerencia
-        actualizarSugerencia(); 
-
-    } catch (error) {
-        console.error("❌ Error Crítico:", error);
-        alert("Error de conexión. Verifique que el servidor Backend esté activo.");
-    }
-}
-
-
-/* ======================================================
-   2. GESTIÓN DE LA INTERFAZ (UI)
-   ====================================================== */
-
-function renderDepartamentos() {
-    const select = document.getElementById("deptSelect");
-    select.innerHTML = '<option value="">-- Seleccione Dpto --</option>';
-    
-    departamentosData.forEach(d => {
-        const option = document.createElement("option");
-        option.value = d.departamento;
-        option.innerText = d.departamento;
-        // IMPORTANTE: Aquí guardamos el dato climático específico de la región
-        option.setAttribute('data-mwh', d.promedio_mwh);
-        select.appendChild(option);
-    });
-}
-
-function renderEstratos() {
-    const select = document.getElementById("estratoSelect");
-    select.innerHTML = ""; 
-
-    tarifasDB.forEach(t => {
-        const option = document.createElement("option");
-        option.value = JSON.stringify(t); // Guardamos todo el objeto tarifa
-        option.innerText = `Estrato ${t.estrato}`;
-        select.appendChild(option);
-    });
-
-    // Listener para actualizar info al cambiar selección
-    select.addEventListener("change", updateEstratoInfo);
-    
-    // Seleccionar el primero por defecto
-    if(tarifasDB.length > 0) {
-        select.selectedIndex = 0; 
-        updateEstratoInfo();
-    }
-}
-
-async function filtrarMunicipios() {
-    const dptoNombre = document.getElementById("deptSelect").value;
-    const muniSelect = document.getElementById("muniSelect");
-    
-    muniSelect.innerHTML = '<option value="">Cargando...</option>';
-    
-    if (!dptoNombre) {
-        muniSelect.innerHTML = '<option value="">-- Seleccione Dpto --</option>';
-        return;
+        console.log('✅ Datos regionales y tarifas cargados.');
     }
 
-    try {
-        const resp = await fetch(`${API_URL}/municipios/${dptoNombre}`);
-        const ciudades = await resp.json();
-        
-        muniSelect.innerHTML = '<option value="">-- Seleccione Ciudad --</option>';
-        ciudades.forEach(c => {
-            muniSelect.innerHTML += `<option value="${c.municipio}">${c.municipio}</option>`;
+    initUIEvents() {
+        if (this.$deptSelect) {
+            this.$deptSelect.addEventListener('change', () => this.filtrarMunicipios());
+        }
+
+        if (this.$estratoSelect) {
+            this.$estratoSelect.addEventListener('change', () => this.updateEstratoInfo());
+        }
+
+        if (this.$consumoInput) {
+            this.$consumoInput.addEventListener('input', () => this.actualizarSugerencia());
+        }
+
+        if (this.$calidadSelect) {
+            this.$calidadSelect.addEventListener('change', () => this.actualizarSugerencia());
+        }
+
+        if (this.$btnCalc) {
+            this.$btnCalc.addEventListener('click', () => this.calcularSimulacion());
+        }
+
+        if (this.$btnPanelMinus) {
+            this.$btnPanelMinus.addEventListener('click', () => this.cambiarPaneles(-1));
+        }
+
+        if (this.$btnPanelPlus) {
+            this.$btnPanelPlus.addEventListener('click', () => this.cambiarPaneles(1));
+        }
+
+        if (this.$btnReload) {
+            this.$btnReload.addEventListener('click', () => this.resetearCalculadora());
+        }
+    }
+
+    // ---------- Helpers ----------
+    async fetchJson(url) {
+        const resp = await fetch(url);
+        if (!resp.ok) {
+            throw new Error(`Error HTTP ${resp.status} al llamar ${url}`);
+        }
+        return resp.json();
+    }
+
+    formatMoney(amount) {
+        return new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            maximumFractionDigits: 0
+        }).format(amount);
+    }
+
+    getSolarData() {
+        if (!this.$deptSelect || this.$deptSelect.selectedIndex <= 0) {
+            return DEFAULT_SOLAR_HOURS;
+        }
+
+        const option = this.$deptSelect.options[this.$deptSelect.selectedIndex];
+        const mwh = parseFloat(option.getAttribute('data-mwh'));
+        return mwh ? (mwh / 60) : DEFAULT_SOLAR_HOURS;
+    }
+
+    // ---------- Render de UI ----------
+    renderDepartamentos() {
+        if (!this.$deptSelect) return;
+
+        this.$deptSelect.innerHTML = '<option value="">-- Seleccione Dpto --</option>';
+
+        this.departamentosData.forEach(d => {
+            const option = document.createElement('option');
+            option.value = d.departamento;
+            option.textContent = d.departamento;
+            option.setAttribute('data-mwh', d.promedio_mwh);
+            this.$deptSelect.appendChild(option);
         });
-        
-        // Recalcular sugerencia ya que cambió la región (y por ende el sol)
-        actualizarSugerencia(); 
-
-    } catch (e) {
-        console.error("Error municipios:", e);
-        muniSelect.innerHTML = '<option value="">Error al cargar</option>';
     }
-}
 
-function updateEstratoInfo() {
-    const select = document.getElementById("estratoSelect");
-    if(!select.value) return;
-    
-    const d = JSON.parse(select.value);
-    
-    // Actualizar textos de ayuda en el DOM
-    document.getElementById("consumoPromedioHint").innerText = `Promedio hogar similar: ${d.consumo_promedio} kWh/mes`;
-    
-    const precioHint = document.getElementById("precioKwhHint");
-    if(precioHint) {
-        precioHint.innerHTML = `<i class="fa-solid fa-tag"></i> Tarifa estimada: <strong>${formatMoney(d.tarifa_kwh)} /kWh</strong>`;
+    renderEstratos() {
+        if (!this.$estratoSelect) return;
+
+        this.$estratoSelect.innerHTML = '';
+
+        this.tarifasDB.forEach(t => {
+            const option = document.createElement('option');
+            option.value = JSON.stringify(t);
+            option.textContent = `Estrato ${t.estrato}`;
+            this.$estratoSelect.appendChild(option);
+        });
+
+        if (this.tarifasDB.length > 0) {
+            this.$estratoSelect.selectedIndex = 0;
+            this.updateEstratoInfo();
+        }
     }
-}
 
+    async filtrarMunicipios() {
+        if (!this.$deptSelect || !this.$muniSelect) return;
 
-/* ======================================================
-   3. LÓGICA DE NEGOCIO (Sugerencias y Cálculos)
-   ====================================================== */
+        const dptoNombre = this.$deptSelect.value;
+        this.$muniSelect.innerHTML = '<option value="">Cargando...</option>';
 
-/**
- * Calcula automáticamente cuántos paneles necesita el usuario
- * basado en su consumo y la radiación de su región.
- */
-function actualizarSugerencia() {
-    const consumo = parseFloat(document.getElementById("consumoInput").value) || 0;
-    const calidad = parseFloat(document.getElementById("calidadSelect").value) || 0.25;
-    
-    // Obtenemos sol real de la zona usando el Helper
-    const horasSol = getSolarData();
+        if (!dptoNombre) {
+            this.$muniSelect.innerHTML = '<option value="">-- Seleccione Dpto --</option>';
+            return;
+        }
 
-    // Fórmula: PotenciaPanel(0.55) * HorasSol * 30dias * EficienciaGlobal(0.75)
-    const produccionPorPanel = 0.55 * horasSol * 30 * 0.75; 
-    
-    let panelesSugeridos = Math.ceil(consumo / produccionPorPanel);
-    if(panelesSugeridos < 1) panelesSugeridos = 1;
+        try {
+            const ciudades = await this.fetchJson(`${this.apiUrl}/municipios/${encodeURIComponent(dptoNombre)}`);
+            this.$muniSelect.innerHTML = '<option value="">-- Seleccione Ciudad --</option>';
 
-    // Actualizar UI
-    document.getElementById("numPaneles").value = panelesSugeridos;
-    
-    const explicacion = document.getElementById("explicacionPaneles");
-    if(explicacion) {
-        explicacion.innerText = `Sugerencia basada en radiación de tu zona: ${panelesSugeridos} paneles.`;
-        explicacion.style.color = "#2980b9";
+            ciudades.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.municipio;
+                option.textContent = c.municipio;
+                this.$muniSelect.appendChild(option);
+            });
+
+            this.actualizarSugerencia();
+        } catch (error) {
+            console.error('Error municipios:', error);
+            this.$muniSelect.innerHTML = '<option value="">Error al cargar</option>';
+        }
     }
-}
 
-/**
- * Control manual de los botones + y -
- */
-function cambiarPaneles(n) {
-    const input = document.getElementById("numPaneles");
-    let val = parseInt(input.value) + n;
-    
-    if(val >= 1) {
-        input.value = val;
-        // Feedback visual de cambio manual
-        const explicacion = document.getElementById("explicacionPaneles");
-        if(explicacion) {
-            explicacion.innerText = "Modificado manualmente.";
-            explicacion.style.color = "#e67e22";
+    updateEstratoInfo() {
+        if (!this.$estratoSelect || !this.$estratoSelect.value) return;
+
+        const data = JSON.parse(this.$estratoSelect.value);
+
+        if (this.$consumoPromedioHint) {
+            this.$consumoPromedioHint.textContent =
+                `Promedio hogar similar: ${data.consumo_promedio} kWh/mes`;
+        }
+
+        if (this.$precioKwhHint) {
+            this.$precioKwhHint.innerHTML =
+                `<i class="fa-solid fa-tag"></i> Tarifa estimada: <strong>${this.formatMoney(data.tarifa_kwh)} /kWh</strong>`;
+        }
+    }
+
+    // ---------- Lógica de negocio ----------
+    actualizarSugerencia() {
+        const consumo = parseFloat(this.$consumoInput?.value) || 0;
+        const calidad = parseFloat(this.$calidadSelect?.value) || 0.25;
+        const horasSol = this.getSolarData();
+
+        const produccionPorPanel = 0.55 * horasSol * 30 * 0.75;
+        let panelesSugeridos = this.getSuggestedPanels(consumo, produccionPorPanel);
+
+        if (this.$numPaneles) {
+            this.$numPaneles.value = panelesSugeridos;
+        }
+
+        if (this.$explicacionPaneles) {
+            this.$explicacionPaneles.textContent =
+                `Sugerencia basada en radiación de tu zona: ${panelesSugeridos} paneles.`;
+            this.$explicacionPaneles.style.color = '#2980b9';
+        }
+    }
+
+    getSuggestedPanels(consumo, produccionPorPanel) {
+        if (produccionPorPanel <= 0) return 1;
+        let paneles = Math.ceil(consumo / produccionPorPanel);
+        return paneles < 1 ? 1 : paneles;
+    }
+
+    cambiarPaneles(delta) {
+        if (!this.$numPaneles) return;
+
+        const current = parseInt(this.$numPaneles.value) || 0;
+        const nuevo = current + delta;
+
+        if (nuevo >= 1) {
+            this.$numPaneles.value = nuevo;
+            if (this.$explicacionPaneles) {
+                this.$explicacionPaneles.textContent = 'Modificado manualmente.';
+                this.$explicacionPaneles.style.color = '#e67e22';
+            }
+        }
+    }
+
+    calcularSimulacion() {
+        if (!this.$deptSelect || this.$deptSelect.selectedIndex <= 0) {
+            alert('Por favor selecciona un departamento');
+            return;
+        }
+
+        const consumo = parseFloat(this.$consumoInput?.value);
+        const estratoRaw = this.$estratoSelect?.value;
+
+        if (!estratoRaw || !consumo) {
+            alert('Por favor completa todos los campos.');
+            return;
+        }
+
+        const horasSol = this.getSolarData();
+        const paneles = parseInt(this.$numPaneles?.value) || 0;
+        const eficienciaPanel = parseFloat(this.$calidadSelect?.value) || 0.25;
+
+        const tData = JSON.parse(estratoRaw);
+        const tarifa = tData.tarifa_kwh;
+
+        const simulacion = this.calcularEscenario(consumo, paneles, eficienciaPanel, tarifa, horasSol);
+
+        this.renderResultados(simulacion, consumo, tarifa, horasSol);
+        this.showResults();
+    }
+
+    calcularEscenario(consumo, paneles, eficienciaPanel, tarifa, horasSol) {
+        const factorRendimiento = 0.75 + (eficienciaPanel - 0.18);
+        const generacionMensual = paneles * 0.55 * horasSol * 30 * factorRendimiento;
+
+        const costoFacturaActual = consumo * tarifa;
+
+        const costoFijoObligatorio = Math.max(costoFacturaActual * 0.15, 25000);
+        const maximoAhorroPosible = costoFacturaActual - costoFijoObligatorio;
+
+        let ahorroCalculado = generacionMensual * tarifa;
+        if (ahorroCalculado > maximoAhorroPosible) {
+            ahorroCalculado = maximoAhorroPosible;
+        }
+
+        const costoConPaneles = costoFacturaActual - ahorroCalculado;
+        const porcentajeReduccion = (ahorroCalculado / costoFacturaActual) * 100;
+
+        return {
+            generacionMensual,
+            costoFacturaActual,
+            costoConPaneles,
+            ahorroCalculado,
+            porcentajeReduccion
+        };
+    }
+
+    renderResultados(sim, consumo, tarifa, horasSol) {
+        if (this.$resEnergia) {
+            this.$resEnergia.textContent = `${Math.round(sim.generacionMensual)} kWh/mes`;
+        }
+        if (this.$resDinero) {
+            this.$resDinero.textContent = this.formatMoney(sim.ahorroCalculado);
+        }
+        if (this.$resPorcentaje) {
+            this.$resPorcentaje.textContent = `${sim.porcentajeReduccion.toFixed(1)}%`;
+            const colorPorc = sim.porcentajeReduccion > 50 ? '#27ae60' : '#e67e22';
+            this.$resPorcentaje.style.color = colorPorc;
+        }
+
+        this.updateChart(sim.costoFacturaActual, sim.costoConPaneles, sim.ahorroCalculado);
+
+        if (this.$infoConsumo) {
+            this.$infoConsumo.textContent = `${consumo} kWh`;
+        }
+        if (this.$infoTarifa) {
+            this.$infoTarifa.textContent = this.formatMoney(tarifa);
+        }
+        if (this.$infoSol) {
+            this.$infoSol.textContent = `${horasSol.toFixed(1)} h/día`;
+        }
+    }
+
+    updateChart(actual, conPaneles, ahorro) {
+        if (this.$labelCostoActual) {
+            this.$labelCostoActual.textContent = this.formatMoney(actual);
+        }
+        if (this.$labelCostoPaneles) {
+            this.$labelCostoPaneles.textContent = this.formatMoney(conPaneles);
+        }
+        if (this.$labelAhorro) {
+            this.$labelAhorro.textContent = this.formatMoney(ahorro);
+        }
+
+        const safeActual = actual || 1;
+
+        let hPaneles = (conPaneles / safeActual) * 100;
+        if (hPaneles < 5) hPaneles = 5;
+
+        let hAhorro = (ahorro / safeActual) * 100;
+        if (hAhorro < 0) hAhorro = 0;
+
+        if (this.$barNewHeight) {
+            this.$barNewHeight.style.height = `${hPaneles}%`;
+        }
+        if (this.$barSaveHeight) {
+            this.$barSaveHeight.style.height = `${hAhorro}%`;
+        }
+    }
+
+    showResults() {
+        if (this.$estadoInicial) {
+            this.$estadoInicial.classList.add('hidden');
+        }
+        if (this.$resultadosBox) {
+            this.$resultadosBox.classList.remove('hidden');
+            this.$resultadosBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    resetearCalculadora() {
+        if (this.$resultadosBox) {
+            this.$resultadosBox.classList.add('hidden');
+        }
+        if (this.$estadoInicial) {
+            this.$estadoInicial.classList.remove('hidden');
+        }
+        if (this.$container) {
+            this.$container.scrollIntoView({ behavior: 'smooth' });
         }
     }
 }
 
-
-/* ======================================================
-   4. SIMULACIÓN FINANCIERA (Core)
-   ====================================================== */
-
-function calcularSimulacion() {
-    // 1. Validaciones
-    const deptSelect = document.getElementById("deptSelect");
-    if(deptSelect.selectedIndex <= 0) return alert("Por favor selecciona un departamento");
-    
-    const consumo = parseFloat(document.getElementById("consumoInput").value);
-    const estratoRaw = document.getElementById("estratoSelect").value;
-    
-    if(!estratoRaw || !consumo) return alert("Por favor completa todos los campos.");
-
-    // 2. Obtención de Datos
-    const horasSol = getSolarData(); // Dato crítico regional
-    const paneles = parseInt(document.getElementById("numPaneles").value);
-    const eficienciaPanel = parseFloat(document.getElementById("calidadSelect").value);
-    
-    const tData = JSON.parse(estratoRaw);
-    const tarifa = tData.tarifa_kwh;
-
-    // 3. Cálculos Matemáticos Avanzados
-    
-    // A. Generación Estimada:
-    // Factor 0.75 base + bonus por calidad del panel seleccionado
-    const factorRendimiento = 0.75 + (eficienciaPanel - 0.18); 
-    const generacionMensual = paneles * 0.55 * horasSol * 30 * factorRendimiento;
-
-    // B. Costos Financieros:
-    const costoFacturaActual = consumo * tarifa;
-    
-    // C. Lógica de "Factura Realista":
-    // Nunca es cero. Mínimo impuesto alumbrado + comercialización (aprox 15% o 25k COP)
-    const costoFijoObligatorio = Math.max(costoFacturaActual * 0.15, 25000); 
-    const maximoAhorroPosible = costoFacturaActual - costoFijoObligatorio;
-
-    // D. Ahorro Bruto:
-    let ahorroCalculado = generacionMensual * tarifa;
-
-    // E. Aplicar Topes (No puedes ahorrar más de lo permitido legalmente)
-    if (ahorroCalculado > maximoAhorroPosible) {
-        ahorroCalculado = maximoAhorroPosible;
-    }
-
-    const costoConPaneles = costoFacturaActual - ahorroCalculado;
-    const porcentajeReduccion = (ahorroCalculado / costoFacturaActual) * 100;
-
-    // 4. Renderizado de Resultados
-    
-    // KPIs Superiores
-    document.getElementById("resEnergia").innerText = Math.round(generacionMensual) + " kWh/mes";
-    document.getElementById("resDinero").innerText = formatMoney(ahorroCalculado);
-    document.getElementById("resPorcentaje").innerText = porcentajeReduccion.toFixed(1) + "%";
-    
-    // Color dinámico del porcentaje
-    const colorPorc = porcentajeReduccion > 50 ? "#27ae60" : "#e67e22";
-    document.getElementById("resPorcentaje").style.color = colorPorc;
-
-    // Gráfico de Barras (Alturas CSS Dinámicas)
-    updateChart(costoFacturaActual, costoConPaneles, ahorroCalculado);
-
-    // Información al Pie
-    document.getElementById("infoConsumo").innerText = consumo + " kWh";
-    document.getElementById("infoTarifa").innerText = formatMoney(tarifa);
-    document.getElementById("infoSol").innerText = horasSol.toFixed(1) + " h/día";
-
-    // Transición Visual
-    showResults();
-}
-
-/**
- * Helper para actualizar las barras del gráfico CSS
- */
-function updateChart(actual, conPaneles, ahorro) {
-    // Texto
-    document.getElementById("labelCostoActual").innerText = formatMoney(actual);
-    document.getElementById("labelCostoPaneles").innerText = formatMoney(conPaneles);
-    document.getElementById("labelAhorro").innerText = formatMoney(ahorro);
-
-    // Alturas (Mínimo visual 5% para que no desaparezca la barra)
-    let hPaneles = (conPaneles / actual) * 100;
-    if (hPaneles < 5) hPaneles = 5;
-    
-    let hAhorro = (ahorro / actual) * 100;
-
-    document.getElementById("barNewHeight").style.height = `${hPaneles}%`; 
-    document.getElementById("barSaveHeight").style.height = `${hAhorro}%`; 
-}
-
-function showResults() {
-    document.getElementById("estadoInicial").classList.add("hidden");
-    const resBox = document.getElementById("resultadosBox");
-    resBox.classList.remove("hidden");
-    resBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-function resetearCalculadora() {
-    document.getElementById("resultadosBox").classList.add("hidden");
-    document.getElementById("estadoInicial").classList.remove("hidden");
-    document.querySelector('.container').scrollIntoView({ behavior: 'smooth' });
-}
+// Bootstrap
+document.addEventListener('DOMContentLoaded', () => {
+    const app = new SolarCalculatorApp(API_URL);
+    app.init();
+});
