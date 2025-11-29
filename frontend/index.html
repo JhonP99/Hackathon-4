@@ -1,181 +1,180 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora Solar Pro</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Simula tu ahorro con paneles solares." />
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <title>Calculadora Solar Pro</title>
 </head>
 <body>
+  <!-- HEADER -->
+  <header class="main-header">
+    <h2><i class="fa-solid fa-solar-panel" style="color:#f1c40f;"></i> SolarPro</h2>
 
-<div class="container">
-    <!-- HEADER -->
-    <header>
-        <div class="logo-area">
-            <i class="fa-solid fa-solar-panel fa-3x logo-icon"></i>
+    <nav>
+      <a href="#">Inicio</a>
+      <a href="#calculadora">Simulación</a>
+      <a href="#faq">Preguntas</a>
+    </nav>
+  </header>
+
+  <!-- HERO -->
+  <main>
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Calcula tu ahorro instalando paneles solares</h1>
+            <p>Descubre cuánto puedes reducir tu factura eléctrica y cuida el planeta.</p>
+            <a href="#calculadora" class="btn-primary">Comenzar simulación</a>
         </div>
-        <div class="titles">
-            <h1>Calculadora de Ahorro con Paneles Solares</h1>
-            <p>Simula cuánto puedes ahorrar en tu factura eléctrica instalando paneles solares</p>
-        </div>
-    </header>
-
-    <main class="grid-layout">
-
-        <!-- COLUMNA IZQUIERDA: FORMULARIO -->
-        <section class="card form-section">
-            <h3><i class="fa-solid fa-map-location-dot"></i> Ubicación</h3>
-
-            <label>Departamento:</label>
-            <select id="deptSelect">
-                <option value="">Cargando datos...</option>
-            </select>
-
-            <label>Municipio:</label>
-            <select id="muniSelect">
-                <option value="">-- Seleccione Dpto --</option>
-            </select>
-
-            <div class="separator"></div>
-
-            <h3><i class="fa-solid fa-house-user"></i> Información de tu Vivienda</h3>
-
-            <label>Estrato de vivienda:</label>
-            <select id="estratoSelect"></select>
-
-            <p class="price-hint" id="precioKwhHint">
-                <i class="fa-solid fa-tag"></i> Tarifa estimada: -- /kWh
-            </p>
-
-            <label>Consumo mensual actual (kWh):</label>
-            <input type="number" id="consumoInput" value="1000">
-            <p class="hint" id="consumoPromedioHint">Consumo promedio: -- kWh/mes</p>
-
-            <div class="label-row">
-                <label>Paneles sugeridos:</label>
-                <span class="badge-rec">Recomendado</span>
-            </div>
-
-            <div class="panel-input">
-                <button id="btnPanelMinus" type="button">-</button>
-                <input type="number" id="numPaneles" value="6">
-                <button id="btnPanelPlus" type="button">+</button>
-            </div>
-            <p class="hint" id="explicacionPaneles">Basado en tu consumo actual.</p>
-
-            <label>Seleccione la calidad del panel solar:</label>
-            <select id="calidadSelect">
-                <option value="0.18">Estándar - 18% Eficiencia</option>
-                <option value="0.21">Alta - 21% Eficiencia</option>
-                <option value="0.25" selected>Superior - 25% Eficiencia</option>
-            </select>
-
-            <button id="btnCalc" class="btn-calc">CALCULAR AHORRO</button>
-        </section>
-
-        <!-- COLUMNA DERECHA: RESULTADOS -->
-        <div class="right-column">
-
-            <!-- ESTADO 1: ESPERANDO (Visible al inicio) -->
-            <section class="card empty-state" id="estadoInicial">
-                <div class="empty-content">
-                    <i class="fa-solid fa-clipboard-list fa-4x empty-icon"></i>
-                    <h3>Esperando datos...</h3>
-                    <p>Completa el formulario de la izquierda para ver tu proyección financiera.</p>
-                </div>
-            </section>
-
-            <!-- ESTADO 2: PANEL DE RESULTADOS (Oculto al inicio) -->
-            <section class="card results-section hidden" id="resultadosBox">
-
-                <h2 class="results-title">
-                    <i class="fa-solid fa-chart-line"></i> Resultados de tu Simulación
-                </h2>
-
-                <!-- 1. TARJETAS SUPERIORES -->
-                <div class="top-cards">
-                    <!-- Energía -->
-                    <div class="kpi-card">
-                        <i class="fa-solid fa-bolt kpi-icon-blue"></i>
-                        <p>Energía generada</p>
-                        <strong id="resEnergia" class="kpi-value-green">0 kWh/mes</strong>
-                    </div>
-                    <!-- Ahorro -->
-                    <div class="kpi-card">
-                        <i class="fa-solid fa-money-bill-wave kpi-icon-blue"></i>
-                        <p>Ahorro mensual</p>
-                        <strong id="resDinero" class="kpi-value-green">$0</strong>
-                    </div>
-                    <!-- Porcentaje -->
-                    <div class="kpi-card">
-                        <i class="fa-solid fa-percent kpi-icon-blue"></i>
-                        <p>Reducción</p>
-                        <strong id="resPorcentaje" class="kpi-value-green">0%</strong>
-                    </div>
-                </div>
-
-                <!-- 2. GRÁFICO DE BARRAS CSS -->
-                <div class="chart-container">
-                    <h4 class="chart-title">Comparación de costos energéticos</h4>
-
-                    <div class="bar-chart">
-                        <!-- Barra 1: Costo Actual -->
-                        <div class="bar-group">
-                            <span id="labelCostoActual" class="bar-value">$0</span>
-                            <div class="bar red-bar bar-full"></div>
-                            <span class="bar-label">Costo actual</span>
-                        </div>
-
-                        <!-- Barra 2: Costo Con Paneles -->
-                        <div class="bar-group">
-                            <span id="labelCostoPaneles" class="bar-value">$0</span>
-                            <div id="barNewHeight" class="bar teal-bar bar-medium"></div>
-                            <span class="bar-label">Costo con paneles</span>
-                        </div>
-
-                        <!-- Barra 3: Ahorro -->
-                        <div class="bar-group">
-                            <span id="labelAhorro" class="bar-value">$0</span>
-                            <div id="barSaveHeight" class="bar yellow-bar bar-low"></div>
-                            <span class="bar-label">Ahorro potencial</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3. INFO ESTRATO (Abajo) -->
-                <div class="info-footer">
-                    <h4 class="info-title">
-                        <i class="fa-solid fa-circle-info"></i> Información de tu estrato
-                    </h4>
-                    <div class="info-row">
-                        <div>
-                            <p><strong>Consumo promedio:</strong> <span id="infoConsumo">--</span></p>
-                            <p><strong>Tarifa eléctrica:</strong> <span id="infoTarifa">--</span></p>
-                            <p><strong>Horas de sol:</strong> <span id="infoSol">--</span></p>
-                        </div>
-                        <i class="fa-solid fa-solar-panel fa-3x info-icon"></i>
-                    </div>
-                </div>
-
-                <!-- BOTÓN REFRESCAR -->
-                <button id="btnReload" class="btn-reload">
-                    <i class="fa-solid fa-rotate-left"></i> NUEVA SIMULACIÓN
-                </button>
-
-            </section>
-        </div>
-    </main>
-
-    <section class="faq-section">
-        <details>
-            <summary>¿Cómo funciona la simulación?</summary>
-            <p>Usamos datos de radiación solar de la NASA y tarifas vigentes de la CREG. El cálculo de paneles es una sugerencia basada en cubrir el 100% de tu consumo ingresado.</p>
-        </details>
     </section>
 
-</div>
+    <!-- SECCIÓN CALCULADORA -->
+    <section id="calculadora" class="calc-section">
+      <header>
+        <h2><i class="fa-solid fa-bolt"></i> Simulador Solar</h2>
+        <p>Completa los datos para estimar tu ahorro energético y económico.</p>
+      </header>
 
-<script src="script.js"></script>
+      <div class="calc-grid">
+        <!-- FORMULARIO -->
+        <form id="formCalc" class="calc-form">
+          <h3><i class="fa-solid fa-map-location-dot"></i> Ubicación</h3>
+
+          <label for="deptSelect">Departamento:</label>
+          <select id="deptSelect"></select>
+
+          <label for="muniSelect">Municipio:</label>
+          <select id="muniSelect">
+            <option value="">Seleccione un departamento</option>
+          </select>
+
+          <div class="divider"></div>
+
+          <h3><i class="fa-solid fa-house-user"></i> Información de Vivienda</h3>
+
+          <label for="estratoSelect">Estrato:</label>
+          <select id="estratoSelect"></select>
+          <p id="precioKwhHint" class="small-info"></p>
+
+          <label for="consumoInput">Consumo mensual (kWh):</label>
+          <input type="number" id="consumoInput" value="1000" min="1" />
+          <p id="consumoPromedioHint" class="small-info" style="margin-bottom: 15px;"></p>
+
+          <label for="numPaneles">Paneles sugeridos:</label>
+          <div class="panel-control">
+            <button type="button" onclick="cambiarPaneles(-1)">-</button>
+            <input type="number" id="numPaneles" value="6" min="1" />
+            <button type="button" onclick="cambiarPaneles(1)">+</button>
+          </div>
+          <p id="explicacionPaneles" class="small-info" style="color: var(--primary-light);">Basado en tu consumo.</p>
+
+          <label for="calidadSelect">Calidad del panel solar:</label>
+          <select id="calidadSelect">
+            <option value="0.18">Estándar - 18%</option>
+            <option value="0.21">Alta - 21%</option>
+            <option value="0.25" selected>Superior - 25%</option>
+          </select>
+
+          <button type="button" class="btn-primary" onclick="calcularSimulacion()">Calcular Ahorro</button>
+        </form>
+
+        <!-- RESULTADOS -->
+          <section class="card empty-state" id="estadoInicial">
+              <div class="empty-content">
+                  <i class="fa-solid fa-clipboard-list fa-4x empty-icon"></i>
+                  <h3>Esperando datos...</h3>
+                  <p>Completa el formulario de la izquierda para ver tu proyección financiera.</p>
+              </div>
+          </section>
+        <div id="resultadosBox" class="results hidden">
+          <h3><i class="fa-solid fa-chart-line"></i> Resultados de tu Simulación</h3>
+
+          <!-- 1. Tarjetas KPI -->
+          <div class="result-cards">
+            <div>
+              <p>Energía generada</p>
+              <strong id="resEnergia">0 kWh/mes</strong>
+            </div>
+            <div>
+              <p>Ahorro mensual</p>
+              <strong id="resDinero">$0</strong>
+            </div>
+            <div>
+              <p>Reducción</p>
+              <strong id="resPorcentaje">0%</strong>
+            </div>
+          </div>
+
+          <!-- 2. Gráfico Visual (NUEVO) -->
+          <div class="chart-container">
+            <h4 style="text-align: center; color: var(--text-muted); margin-bottom: 20px; font-weight:500;">Comparativa de Costos Mensuales</h4>
+            
+            <div class="bar-chart">
+                <!-- Barra 1: Costo Actual -->
+                <div class="bar-group">
+                    <span id="labelCostoActual" class="bar-value">$0</span>
+                    <div class="bar-wrapper">
+                        <div class="bar red-bar" style="height: 100%;"></div>
+                    </div>
+                    <span class="bar-label">Sin Paneles</span>
+                </div>
+
+                <!-- Barra 2: Costo Con Paneles -->
+                <div class="bar-group">
+                    <span id="labelCostoPaneles" class="bar-value">$0</span>
+                    <div class="bar-wrapper">
+                        <div id="barNewHeight" class="bar teal-bar" style="height: 0%;"></div>
+                    </div>
+                    <span class="bar-label">Con Paneles</span>
+                </div>
+
+                <!-- Barra 3: Ahorro -->
+                <div class="bar-group">
+                    <span id="labelAhorro" class="bar-value">$0</span>
+                    <div class="bar-wrapper">
+                        <div id="barSaveHeight" class="bar yellow-bar" style="height: 0%;"></div>
+                    </div>
+                    <span class="bar-label">Tu Ahorro</span>
+                </div>
+            </div>
+          </div>
+
+          <!-- 3. Información del Footer -->
+          <div class="info-footer">
+            <p><strong>Consumo promedio:</strong> <span id="infoConsumo">--</span></p>
+            <p><strong>Tarifa eléctrica:</strong> <span id="infoTarifa">--</span></p>
+            <p><strong>Horas de sol:</strong> <span id="infoSol">--</span></p>
+          </div>
+
+          <!-- 4. Botón de Reinicio -->
+          <button class="btn-secondary" onclick="resetearCalculadora()">
+            <i class="fa-solid fa-rotate-left"></i> Nueva Simulación
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="faq-section">
+      <h2>Preguntas Frecuentes</h2>
+      <details>
+        <summary>¿Cómo se calculan los resultados?</summary>
+        <p>Se usan datos de radiación solar promedio y tarifas eléctricas almacenadas en una base de datos.</p>
+      </details>
+      <details>
+        <summary>¿Qué incluye la tarifa?</summary>
+        <p>Incluye el costo de generación, transmisión y comercialización vigente en tu región.</p>
+      </details>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Hackathon 6. Todos los derechos reservados.</p>
+  </footer>
+  
+  <script src="script.js"></script>
 </body>
 </html>
