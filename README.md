@@ -30,8 +30,7 @@ Esta aplicación web permite a las familias de la región Caribe simular con pre
 
 *   **Frontend:** HTML5, CSS3 (Grid/Flexbox), JavaScript (Vanilla ES6+).
 *   **Backend:** Node.js, Express.
-*   **Base de Datos:**
-    *   Librería `pg` para conexiones PostgreSQL.
+*   **Base de Datos:** Conexiones PostgreSQL.
 *   **Herramientas:** CORS.
 
 ---
