@@ -52,7 +52,8 @@ app.get('/api/departamentos', async (req, res, next) => {
         const sql = `
             SELECT departamento, AVG(produccion_mwh) AS promedio_mwh
             FROM hackathon_solar.dataset_produccion
-            GROUP BY departamento`;
+            GROUP BY departamento
+            ORDER BY departamento ASC`;
         const results = await executeQuery(sql);
         res.json(results);
     } catch (error) {
