@@ -221,7 +221,7 @@ nav a:focus {
   color: var(--text-primary);
   padding: 0.6rem;
   font-size: 1rem;
-  margin-top: 0.25rem;
+  margin: 0.5rem;
 }
 
 .calc-form input:focus,
@@ -461,26 +461,175 @@ footer {
   display: none !important;
 }
 
-.faq-section details {
-  margin-bottom: 8px;
-  border-radius: 6px;
-  background: #111827;
-  color: #e5e7eb;
-  padding: 0.8rem;
+/* ================== RESPONSIVE ================== */
+
+
+@media (max-width: 1024px) {
+  .calc-section {
+    margin: 2rem 1rem;
+    padding: 1.5rem;
+  }
+
+  .hero {
+    height: 420px;
+  }
+
+  .hero-content h1 {
+    font-size: 2.3rem;
+  }
+
+  .hero-content p {
+    font-size: 1.05rem;
+  }
 }
 
-.faq-section summary {
-  list-style: none;
-  cursor: pointer;
-  font-weight: 500;
+@media (max-width: 768px) {
+  .main-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+  }
+
+  nav {
+    width: 100%;
+    justify-content: space-between;
+    font-size: 0.9rem;
+  }
+
+  .hero {
+    height: 380px;
+    padding: 0 1rem;
+  }
+
+  .hero-content h1 {
+    font-size: 2rem;
+  }
+
+  .hero-content p {
+    font-size: 1rem;
+  }
+
+  .calc-section {
+    margin: 2rem 1rem;
+    padding: 1.25rem;
+  }
+
+  .calc-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .calc-form {
+    padding: 1.25rem;
+  }
+
+  .results {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .result-cards {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .result-cards > div {
+    padding: 0.75rem 0.5rem;
+    border-radius: 0.5rem;
+    background-color: rgba(15, 23, 42, 0.7);
+  }
+
+  .chart-container {
+    padding: 0.75rem;
+  }
+
+  .bar-chart {
+    height: 200px;
+  }
+
+  .bar-group {
+    width: 32%;
+  }
 }
 
-.faq-section summary::-webkit-details-marker {
-  display: none;
-}
 
-.faq-section .contenido {
-  overflow: hidden;
-  transition: height 0.4s ease;
+@media (max-width: 480px) {
+  .main-header h2 {
+    font-size: 1.05rem;
+  }
+
+  nav {
+    gap: 0.5rem;
+  }
+
+  nav a {
+    font-size: 0.8rem;
+  }
+
+  .hero {
+    height: 340px;
+  }
+
+  .hero-content h1 {
+    font-size: 1.7rem;
+  }
+
+  .hero-content p {
+    font-size: 0.95rem;
+  }
+
+  .btn-primary {
+    width: 100%;
+    text-align: center;
+    padding: 0.8rem 1rem;
+    font-size: 1rem;
+  }
+
+  .calc-section {
+    margin: 1.5rem 0.75rem;
+    padding: 1rem;
+  }
+
+  .calc-form label {
+    font-size: 0.85rem;
+  }
+
+  .calc-form input,
+  .calc-form select {
+    font-size: 0.9rem;
+  }
+
+  .panel-control button {
+    padding: 0.45rem 0.6rem;
+  }
+
+  .small-info {
+    font-size: 0.8rem;
+  }
+
+  .chart-container {
+    margin: 1.5rem 0;
+  }
+
+  .bar-chart {
+    height: 180px;
+  }
+
+  .bar-value {
+    font-size: 0.8rem;
+  }
+
+  .bar-label {
+    font-size: 0.75rem;
+  }
+
+  .faq-section {
+    margin: 2rem 0.75rem;
+    padding: 0.5rem;
+  }
+
+  footer {
+    font-size: 0.8rem;
+  }
 }
 
