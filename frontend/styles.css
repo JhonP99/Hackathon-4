@@ -460,3 +460,27 @@ footer {
 .hidden {
   display: none !important;
 }
+
+.faq-section details {
+  margin-bottom: 8px;
+  border-radius: 6px;
+  background: #111827;
+  color: #e5e7eb;
+  padding: 0.8rem;
+}
+
+.faq-section summary {
+  list-style: none;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.faq-section summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-section .contenido {
+  overflow: hidden;
+  transition: height 0.4s ease;
+}
+

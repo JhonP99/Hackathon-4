@@ -159,16 +159,51 @@
 
     <!-- FAQ -->
     <section id="faq" class="faq-section">
-      <h2>Preguntas Frecuentes</h2>
-      <details>
-        <summary>¿Cómo se calculan los resultados?</summary>
-        <p>Se usan datos de radiación solar promedio y tarifas eléctricas almacenadas en una base de datos.</p>
-      </details>
-      <details>
-        <summary>¿Qué incluye la tarifa?</summary>
-        <p>Incluye el costo de generación, transmisión y comercialización vigente en tu región.</p>
-      </details>
-    </section>
+  <h2>Preguntas Frecuentes</h2>
+
+  <details>
+    <summary>¿Cómo se calculan los resultados?</summary>
+    <div class="contenido">
+      <p>Se usan datos de radiación solar promedio y tarifas eléctricas almacenadas en una base de datos.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>¿Qué incluye la tarifa?</summary>
+    <div class="contenido">
+      <p>La tarifa incluye el costo por cada kWh que pagas en tu factura, sumando generación de la energía, 
+        transporte por las redes, distribución hasta tu casa y la comercialización del servicio.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>¿Cuánta energía puedo generar con mi techo?</summary>
+    <div class="contenido">
+      <p>La energía estimada se calcula a partir de tu consumo mensual, la radiación solar promedio de tu municipio y 
+        el número de paneles seleccionados, usando datos históricos y técnicos del sistema.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>¿Cuánto tiempo se demora en recuperarse la inversión?</summary>
+    <div class="contenido">
+      <p>En promedio, los sistemas residenciales suelen recuperar su inversión entre 5 y 10 años, dependiendo 
+        del costo del sistema, el nivel de radiación en tu zona y el aumento anual de la tarifa eléctrica.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>¿Qué diferencia hay en mi factura y en mi consumo de energía entre tener paneles solares y no tenerlos?</summary>
+    <div class="contenido">
+      <p>Con paneles solares, una parte importante de la electricidad que usas la generas tú mismo a partir del sol, 
+        por lo que dependes menos de la red y tu factura de luz suele reducirse de forma notable a medio y largo plazo.</p>
+    </div>
+  </details>
+</section>
+
+</section>
+
+
   </main>
 
   <footer>
@@ -176,5 +211,44 @@
   </footer>
   
   <script src="script.js"></script>
+  <script>
+document.addEventListener('DOMContentLoaded', () => {
+  const faqs = document.querySelectorAll('.faq-section details');
+
+  faqs.forEach((detail) => {
+    const summary = detail.querySelector('summary');
+    const contenido = detail.querySelector('.contenido');
+
+    // medir altura real del contenido
+    const altulaReal = contenido.scrollHeight;
+    contenido.style.height = '0px';
+
+    summary.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      // cerrar los demás
+      faqs.forEach((d) => {
+        if (d !== detail && d.hasAttribute('open')) {
+          const c = d.querySelector('.contenido');
+          c.style.height = '0px';
+          setTimeout(() => d.removeAttribute('open'), 400);
+        }
+      });
+
+      // abrir/cerrar el actual
+      if (detail.hasAttribute('open')) {
+        contenido.style.height = '0px';
+        setTimeout(() => detail.removeAttribute('open'), 400);
+      } else {
+        detail.setAttribute('open', '');
+        setTimeout(() => {
+          contenido.style.height = contenido.scrollHeight + 'px';
+        }, 10);
+      }
+    });
+  });
+});
+</script>
+
 </body>
 </html>
