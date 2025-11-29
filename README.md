@@ -2,7 +2,7 @@
 
 ![Estado](https://img.shields.io/badge/Estado-Finalizado-success)
 ![Versión](https://img.shields.io/badge/Versión-1.0.0-blue)
-![Stack](https://img.shields.io/badge/Tech-NodeJS_MySQL_PostgreSQL-orange)
+![Stack](https://img.shields.io/badge/Tech-NodeJS_PostgreSQL-orange)
 
 ## 📖 Descripción
 
